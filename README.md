@@ -9,7 +9,7 @@ It is a lab setup. It is not meant for production use.
 All resources are in one CloudFormation stack (`CdkStack`) in `eu-west-3`:
 
 - A VPC (`10.0.0.0/16`) with 2 public and 2 private subnets across 2 availability zones, an internet gateway and one NAT gateway
-- 5 EC2 instances (`t3.medium`, Amazon Linux 2023) in the private subnets: `controlplane-1` and `node-1` to `node-4`. Each one gets its hostname set at first boot
+- 5 EC2 instances (`t3.medium`, Ubuntu 24.04 LTS) in the private subnets: `controlplane-1` and `node-1` to `node-4`. Each one gets its hostname set at first boot
 - A shared security group that allows all traffic between the nodes
 - An IAM role that allows access through SSM Session Manager (no SSH, no public IPs) and read/write access to the S3 bucket
 - A private S3 bucket that is deleted on `cdk destroy`
