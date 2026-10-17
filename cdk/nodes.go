@@ -17,6 +17,14 @@ func hostnameUserData(hostname string) awsec2.UserData {
 	return userData
 }
 
+// ubuntuImage resolves the latest Ubuntu 24.04 LTS AMI from Canonical's public SSM parameter.
+func ubuntuImage() awsec2.IMachineImage {
+	return awsec2.MachineImage_FromSsmParameter(
+		jsii.String("/aws/service/canonical/ubuntu/server/24.04/stable/current/amd64/hvm/ebs-gp3/ami-id"),
+		&awsec2.SsmParameterImageOptions{Os: awsec2.OperatingSystemType_LINUX},
+	)
+}
+
 // NewNodes creates 4 EC2 instances, 2 in each private subnet.
 func NewNodes(scope constructs.Construct, vpc awsec2.Vpc, bucket awss3.Bucket) {
 	instanceRoleName := "cka-prep-ec2-role"
@@ -49,7 +57,7 @@ func NewNodes(scope constructs.Construct, vpc awsec2.Vpc, bucket awss3.Bucket) {
 			SecurityGroup: nodeSG,
 			VpcSubnets:    &awsec2.SubnetSelection{Subnets: &[]awsec2.ISubnet{privateSubnets[i%2]}},
 			InstanceType:  awsec2.NewInstanceType(jsii.String(instanceType)),
-			MachineImage:  awsec2.MachineImage_LatestAmazonLinux2023(nil),
+			MachineImage:  ubuntuImage(),
 			Role:          role,
 			UserData:      hostnameUserData(name),
 
@@ -64,7 +72,7 @@ func NewNodes(scope constructs.Construct, vpc awsec2.Vpc, bucket awss3.Bucket) {
 			SecurityGroup: nodeSG,
 			VpcSubnets:    &awsec2.SubnetSelection{Subnets: &[]awsec2.ISubnet{privateSubnets[i%2]}},
 			InstanceType:  awsec2.NewInstanceType(jsii.String(instanceType)),
-			MachineImage:  awsec2.MachineImage_LatestAmazonLinux2023(nil),
+			MachineImage:  ubuntuImage(),
 			Role:          role,
 			UserData:      hostnameUserData(name),
 
