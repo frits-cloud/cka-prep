@@ -52,6 +52,8 @@ func NewNodes(scope constructs.Construct, vpc awsec2.Vpc, bucket awss3.Bucket) {
 			MachineImage:  awsec2.MachineImage_LatestAmazonLinux2023(nil),
 			Role:          role,
 			UserData:      hostnameUserData(name),
+
+			UserDataCausesReplacement: jsii.Bool(true),
 		})
 	}
 	masterNodeNames := []string{"controlplane-1"}
@@ -65,6 +67,8 @@ func NewNodes(scope constructs.Construct, vpc awsec2.Vpc, bucket awss3.Bucket) {
 			MachineImage:  awsec2.MachineImage_LatestAmazonLinux2023(nil),
 			Role:          role,
 			UserData:      hostnameUserData(name),
+
+			UserDataCausesReplacement: jsii.Bool(true),
 		})
 	}
 }
