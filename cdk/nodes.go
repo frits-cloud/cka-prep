@@ -32,9 +32,21 @@ func NewNodes(scope constructs.Construct, vpc awsec2.Vpc, bucket awss3.Bucket) {
 
 	// nodes may talk to each other on any port (simple for a lab)
 	nodeSG.AddIngressRule(nodeSG, awsec2.Port_AllTraffic(), jsii.String("node to node"), nil)
-	names := []string{"node1", "node2", "node3", "node4"}
+	names := []string{"node-1", "node-2", "node-3", "node-4"}
 
 	for i, name := range names {
+		awsec2.NewInstance(scope, jsii.String(name), &awsec2.InstanceProps{
+			Vpc:           vpc,
+			SecurityGroup: nodeSG,
+			VpcSubnets:    &awsec2.SubnetSelection{Subnets: &[]awsec2.ISubnet{privateSubnets[i%2]}},
+			InstanceType:  awsec2.NewInstanceType(jsii.String(instanceType)),
+			MachineImage:  awsec2.MachineImage_LatestAmazonLinux2023(nil),
+			Role:          role,
+		})
+	}
+	masterNodeNames := []string{"controlplane-1"}
+
+	for i, name := range masterNodeNames {
 		awsec2.NewInstance(scope, jsii.String(name), &awsec2.InstanceProps{
 			Vpc:           vpc,
 			SecurityGroup: nodeSG,
