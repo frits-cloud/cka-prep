@@ -21,7 +21,7 @@ func NewCdkStack(scope constructs.Construct, id string, props *CdkStackProps) aw
 	bucket := NewS3Bucket(stack)
 	NewNodes(stack, vpc, bucket)
 	awscdk.Tags_Of(stack).Add(jsii.String("Project"), jsii.String("cka-prep"), nil)
-
+	awscdk.Tags_Of(stack).Add(jsii.String("Owner"), jsii.String("Frits"), nil)
 	return stack
 }
 
