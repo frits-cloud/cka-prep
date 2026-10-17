@@ -1,12 +1,21 @@
 package main
 
 import (
+	"fmt"
+
 	"github.com/aws/aws-cdk-go/awscdk/v2/awsec2"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awsiam"
 	"github.com/aws/aws-cdk-go/awscdk/v2/awss3"
 	"github.com/aws/constructs-go/constructs/v10"
 	"github.com/aws/jsii-runtime-go"
 )
+
+// hostnameUserData returns user data (run as root on first boot) that sets the hostname.
+func hostnameUserData(hostname string) awsec2.UserData {
+	userData := awsec2.UserData_ForLinux(nil)
+	userData.AddCommands(jsii.String(fmt.Sprintf("hostnamectl set-hostname %s", hostname)))
+	return userData
+}
 
 // NewNodes creates 4 EC2 instances, 2 in each private subnet.
 func NewNodes(scope constructs.Construct, vpc awsec2.Vpc, bucket awss3.Bucket) {
@@ -42,6 +51,7 @@ func NewNodes(scope constructs.Construct, vpc awsec2.Vpc, bucket awss3.Bucket) {
 			InstanceType:  awsec2.NewInstanceType(jsii.String(instanceType)),
 			MachineImage:  awsec2.MachineImage_LatestAmazonLinux2023(nil),
 			Role:          role,
+			UserData:      hostnameUserData(name),
 		})
 	}
 	masterNodeNames := []string{"controlplane-1"}
@@ -54,6 +64,7 @@ func NewNodes(scope constructs.Construct, vpc awsec2.Vpc, bucket awss3.Bucket) {
 			InstanceType:  awsec2.NewInstanceType(jsii.String(instanceType)),
 			MachineImage:  awsec2.MachineImage_LatestAmazonLinux2023(nil),
 			Role:          role,
+			UserData:      hostnameUserData(name),
 		})
 	}
 }

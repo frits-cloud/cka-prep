@@ -21,6 +21,6 @@ func TestCdkStack(t *testing.T) {
 	template.ResourceCountIs(jsii.String("AWS::EC2::VPC"), jsii.Number(1))
 	template.ResourceCountIs(jsii.String("AWS::EC2::Subnet"), jsii.Number(4))
 	template.ResourceCountIs(jsii.String("AWS::EC2::NatGateway"), jsii.Number(1))
-	template.ResourceCountIs(jsii.String("AWS::EC2::Instance"), jsii.Number(4))
+	template.ResourceCountIs(jsii.String("AWS::EC2::Instance"), jsii.Number(5))
 	template.ResourceCountIs(jsii.String("AWS::S3::Bucket"), jsii.Number(1))
 }
