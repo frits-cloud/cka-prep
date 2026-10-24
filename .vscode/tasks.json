@@ -1,0 +1,61 @@
+{
+  "version": "2.0.0",
+  "options": {
+    "env": { "AWS_PROFILE": "4cee.playground" }
+  },
+  "tasks": [
+    {
+      "label": "shell: controlplane-1",
+      "type": "shell",
+      "command": "${workspaceFolder}/scripts/ssm-shell.sh controlplane-1",
+      "isBackground": true,
+      "problemMatcher": [],
+      "presentation": { "group": "nodes", "panel": "dedicated", "reveal": "always", "focus": false }
+    },
+    {
+      "label": "shell: node-1",
+      "type": "shell",
+      "command": "${workspaceFolder}/scripts/ssm-shell.sh node-1",
+      "isBackground": true,
+      "problemMatcher": [],
+      "presentation": { "group": "nodes", "panel": "dedicated", "reveal": "always", "focus": false }
+    },
+    {
+      "label": "shell: node-2",
+      "type": "shell",
+      "command": "${workspaceFolder}/scripts/ssm-shell.sh node-2",
+      "isBackground": true,
+      "problemMatcher": [],
+      "presentation": { "group": "nodes", "panel": "dedicated", "reveal": "always", "focus": false }
+    },
+    {
+      "label": "shell: node-3",
+      "type": "shell",
+      "command": "${workspaceFolder}/scripts/ssm-shell.sh node-3",
+      "isBackground": true,
+      "problemMatcher": [],
+      "presentation": { "group": "nodes", "panel": "dedicated", "reveal": "always", "focus": false }
+    },
+    {
+      "label": "shell: node-4",
+      "type": "shell",
+      "command": "${workspaceFolder}/scripts/ssm-shell.sh node-4",
+      "isBackground": true,
+      "problemMatcher": [],
+      "presentation": { "group": "nodes", "panel": "dedicated", "reveal": "always", "focus": false }
+    },
+    {
+      "label": "shell: all nodes",
+      "dependsOn": [
+        "shell: controlplane-1",
+        "shell: node-1",
+        "shell: node-2",
+        "shell: node-3",
+        "shell: node-4"
+      ],
+      "dependsOrder": "parallel",
+      "problemMatcher": [],
+      "presentation": { "reveal": "always" }
+    }
+  ]
+}

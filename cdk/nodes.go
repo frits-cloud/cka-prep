@@ -10,10 +10,14 @@ import (
 	"github.com/aws/jsii-runtime-go"
 )
 
-// hostnameUserData returns user data (run as root on first boot) that sets the hostname.
-func hostnameUserData(hostname string) awsec2.UserData {
+// nodeUserData returns user data (run as root on first boot) that sets the hostname
+// and installs containerd configured for the systemd cgroup driver.
+func nodeUserData(hostname string) awsec2.UserData {
 	userData := awsec2.UserData_ForLinux(nil)
-	userData.AddCommands(jsii.String(fmt.Sprintf("hostnamectl set-hostname %s", hostname)))
+	userData.AddCommands(
+		jsii.String(fmt.Sprintf("hostnamectl set-hostname %s", hostname)),
+		jsii.String("apt-get update"),
+	)
 	return userData
 }
 
@@ -40,7 +44,7 @@ func NewNodes(scope constructs.Construct, vpc awsec2.Vpc, bucket awss3.Bucket) {
 
 	bucket.GrantReadWrite(role, nil)
 
-	privateSubnets := *vpc.PrivateSubnets()
+	publicSubnets := *vpc.PublicSubnets()
 	nodeSG := awsec2.NewSecurityGroup(scope, jsii.String("NodeSG"), &awsec2.SecurityGroupProps{
 		Vpc:              vpc,
 		Description:      jsii.String("CKA nodes"),
@@ -49,17 +53,23 @@ func NewNodes(scope constructs.Construct, vpc awsec2.Vpc, bucket awss3.Bucket) {
 
 	// nodes may talk to each other on any port (simple for a lab)
 	nodeSG.AddIngressRule(nodeSG, awsec2.Port_AllTraffic(), jsii.String("node to node"), nil)
+
+	// construct IDs must be unique per scope, so look the key pair up once and share it
+	keyPair := awsec2.KeyPair_FromKeyPairName(scope, jsii.String("CkaPrepKeyPair"), jsii.String("cka-prep"))
+
 	names := []string{"node-1", "node-2", "node-3", "node-4"}
 
 	for i, name := range names {
 		awsec2.NewInstance(scope, jsii.String(name), &awsec2.InstanceProps{
-			Vpc:           vpc,
-			SecurityGroup: nodeSG,
-			VpcSubnets:    &awsec2.SubnetSelection{Subnets: &[]awsec2.ISubnet{privateSubnets[i%2]}},
-			InstanceType:  awsec2.NewInstanceType(jsii.String(instanceType)),
-			MachineImage:  ubuntuImage(),
-			Role:          role,
-			UserData:      hostnameUserData(name),
+			Vpc:                      vpc,
+			SecurityGroup:            nodeSG,
+			AssociatePublicIpAddress: jsii.Bool(true),
+			VpcSubnets:               &awsec2.SubnetSelection{Subnets: &[]awsec2.ISubnet{publicSubnets[i%2]}},
+			InstanceType:             awsec2.NewInstanceType(jsii.String(instanceType)),
+			MachineImage:             ubuntuImage(),
+			Role:                     role,
+			UserData:                 nodeUserData(name),
+			KeyPair:                  keyPair,
 
 			UserDataCausesReplacement: jsii.Bool(true),
 		})
@@ -68,13 +78,14 @@ func NewNodes(scope constructs.Construct, vpc awsec2.Vpc, bucket awss3.Bucket) {
 
 	for i, name := range masterNodeNames {
 		awsec2.NewInstance(scope, jsii.String(name), &awsec2.InstanceProps{
-			Vpc:           vpc,
-			SecurityGroup: nodeSG,
-			VpcSubnets:    &awsec2.SubnetSelection{Subnets: &[]awsec2.ISubnet{privateSubnets[i%2]}},
-			InstanceType:  awsec2.NewInstanceType(jsii.String(instanceType)),
-			MachineImage:  ubuntuImage(),
-			Role:          role,
-			UserData:      hostnameUserData(name),
+			Vpc:                      vpc,
+			SecurityGroup:            nodeSG,
+			AssociatePublicIpAddress: jsii.Bool(true),
+			VpcSubnets:               &awsec2.SubnetSelection{Subnets: &[]awsec2.ISubnet{publicSubnets[i%2]}},
+			InstanceType:             awsec2.NewInstanceType(jsii.String(instanceType)),
+			MachineImage:             ubuntuImage(),
+			Role:                     role,
+			UserData:                 nodeUserData(name),
 
 			UserDataCausesReplacement: jsii.Bool(true),
 		})

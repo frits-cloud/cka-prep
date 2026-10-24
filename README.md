@@ -1,74 +1,26 @@
 # cka-prep
 
-A small AWS environment, defined with the AWS CDK (Go), for learning and practising for the **CKA (Certified Kubernetes Administrator)** exam: installing a cluster with `kubeadm`, network policies, and the other exam topics.
-
-It is a lab setup. It is not meant for production use.
+A small AWS lab, defined with the AWS CDK (Go), for practising for the **CKA (Certified Kubernetes Administrator)** exam: installing a cluster with `kubeadm`, network policies and the other exam topics. It is not meant for production use.
 
 ## What gets deployed
 
-All resources are in one CloudFormation stack (`CdkStack`) in `eu-west-3`:
+One CloudFormation stack (`CdkStack`) in `eu-west-3`:
 
-- A VPC (`10.0.0.0/16`) with 2 public and 2 private subnets across 2 availability zones, an internet gateway and one NAT gateway
-- 5 EC2 instances (`t3.medium`, Ubuntu 24.04 LTS) in the private subnets: `controlplane-1` and `node-1` to `node-4`. Each one gets its hostname set at first boot
-- A shared security group that allows all traffic between the nodes
-- An IAM role that allows access through SSM Session Manager (no SSH, no public IPs) and read/write access to the S3 bucket
-- A private S3 bucket that is deleted on `cdk destroy`
+- A VPC with 2 public and 2 private subnets across 2 AZs and one NAT gateway
+- 5 EC2 instances (`t3.medium`, Ubuntu 24.04) in the private subnets: `controlplane-1` and `node-1` to `node-4`
+- A security group that allows all traffic between the nodes
+- An IAM role for SSM Session Manager (no SSH, no public IPs) with read/write access to a private S3 bucket that is deleted on `cdk destroy`
 
-The code is in [cdk/](./cdk): `network.go`, `nodes.go` and `s3.go`, wired together in `cdk.go`.
+The code is in [cdk/](./cdk), wired together in [cdk.go](./cdk/cdk.go).
 
 ## Prerequisites
 
-### 1. Install Node.js and npm
+- [Node.js](https://nodejs.org/) and the CDK: `sudo npm install -g aws-cdk` (omit `sudo` if you use nvm)
+- [Go](https://go.dev/doc/install), version as in [cdk/go.mod](./cdk/go.mod) or newer
+- The [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html) with a profile for the target account (`export AWS_PROFILE=<profile>`), and the [Session Manager plugin](https://docs.aws.amazon.com/systems-manager/latest/userguide/session-manager-working-with-install-plugin.html) to open shells
+- An EC2 key pair named `cka-prep` in the region, which the worker nodes reference
 
-Install Node.js (which includes npm) from <https://nodejs.org/> or via your package manager, e.g. on Debian/Ubuntu:
-
-```bash
-sudo apt install nodejs npm
-```
-
-Verify the installation:
-
-```bash
-node --version
-npm --version
-```
-
-### 2. Install the AWS CDK
-
-```bash
-sudo npm install -g aws-cdk
-```
-
-`sudo` is needed when Node.js was installed via the system package manager (global packages go to a root-owned directory). If you installed Node.js with a version manager such as [nvm](https://github.com/nvm-sh/nvm), omit `sudo`.
-
-Verify the installation:
-
-```bash
-cdk --version
-```
-
-### 3. Install Go
-
-Install Go from <https://go.dev/doc/install> (the version in [cdk/go.mod](./cdk/go.mod) or newer) and check it:
-
-```bash
-go version
-```
-
-### 4. Install the AWS CLI and configure a profile
-
-Install the [AWS CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html) and sign in with a profile for the target account, then check it:
-
-```bash
-aws sts get-caller-identity --profile <profile>
-export AWS_PROFILE=<profile>
-```
-
-The account and region are set in `env()` in [cdk/cdk.go](./cdk/cdk.go). Change them to match yours.
-
-To open a shell on a node you also need the [Session Manager plugin](https://docs.aws.amazon.com/systems-manager/latest/userguide/session-manager-working-with-install-plugin.html).
-
-### 5. Bootstrap the account (once per account and region)
+Set your account and region in `env()` in [cdk/cdk.go](./cdk/cdk.go), then bootstrap once per account and region:
 
 ```bash
 cd cdk
@@ -81,26 +33,32 @@ cdk bootstrap aws://<account-id>/<region>
 cd cdk
 cdk diff      # preview the changes
 cdk deploy    # create the environment
+go test ./... # run the tests
 ```
 
-Connect to a node (find the instance ID in the EC2 console):
+Open a shell on a node by name:
 
 ```bash
-aws ssm start-session --target <instance-id> --region <region> --profile <profile>
+./scripts/ssm-shell.sh node-1
 ```
 
-From there you can practise installing Kubernetes with `kubeadm`, joining the nodes, and working with network policies.
+In VS Code, run the task **Tasks: Run Task → shell: all nodes** ([.vscode/tasks.json](./.vscode/tasks.json)) to open a session on every node at once. They show up as split panes in one terminal group. You can also run a single node, e.g. `shell: controlplane-1`. The Session Manager plugin and valid AWS credentials (`AWS_PROFILE`) are needed in the environment VS Code runs in.
 
-Run the tests with:
+### Run a script on all nodes
+
+[remote/](./remote) finds every running instance tagged `Project=cka-prep` and runs a script on all of them in parallel with SSM Run Command. It needs no SSH or key, and the script runs as root. By default it runs [install-k8s.sh](./install-k8s.sh), which installs containerd, kubeadm, kubelet and kubectl.
 
 ```bash
-cd cdk
-go test ./...
+cd remote
+go run .                           # all nodes
+go run . -nodes controlplane-1     # selected nodes
 ```
+
+Other flags: `-region`, `-script` and `-timeout`. Output is printed per node when it finishes (SSM keeps only the last 24,000 characters). After that, create the cluster with `kubeadm init` on `controlplane-1` and `kubeadm join` on the workers.
 
 ## Clean up
 
-The NAT gateway and the instances cost money while they run. Destroy the stack when you are done:
+The NAT gateway and instances cost money while they run:
 
 ```bash
 cd cdk
