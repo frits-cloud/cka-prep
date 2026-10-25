@@ -26,7 +26,7 @@ sudo sysctl --system
 
 # Install containerd
 sudo apt-get update
-sudo apt-get install -y ca-certificates curl gpg containerd
+sudo apt-get install -y ca-certificates curl gpg containerd bash-completion
 
 # Configure containerd
 sudo mkdir -p /etc/containerd
@@ -53,6 +53,20 @@ sudo apt-get update
 sudo apt-get install -y kubelet kubeadm kubectl
 sudo apt-mark hold kubelet kubeadm kubectl
 sudo systemctl enable --now kubelet
+
+# Shell completion and `k` alias for all interactive bash shells (incl. SSM sessions)
+if ! grep -q 'cka-prep' /etc/bash.bashrc; then
+  sudo tee -a /etc/bash.bashrc >/dev/null <<'EOF'
+
+# cka-prep
+if ! shopt -oq posix && [ -f /usr/share/bash-completion/bash_completion ]; then
+  . /usr/share/bash-completion/bash_completion
+fi
+source <(kubectl completion bash)
+alias k=kubectl
+complete -o default -F __start_kubectl k
+EOF
+fi
 
 echo "Installed versions:"
 kubeadm version -o short
