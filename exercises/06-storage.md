@@ -5,7 +5,7 @@ Namespace: `storage`
 ## Task
 
 1. Create a StorageClass `manual` with provisioner `kubernetes.io/no-provisioner` and `volumeBindingMode: WaitForFirstConsumer`.
-2. Create a PersistentVolume `pv-1` of 1Gi, `ReadWriteOnce`, storage class `manual`, reclaim policy `Retain`, `hostPath` `/mnt/data/pv-1`.
+2. Create a v `pv-1` of 1Gi, `ReadWriteOnce`, storage class `manual`, reclaim policy `Retain`, `hostPath` `/mnt/data/pv-1`.
 3. Create a PersistentVolumeClaim `data` (500Mi, `ReadWriteOnce`, class `manual`) and note that it stays `Pending` until a pod uses it.
 4. Create a pod `writer` (image `busybox`) that mounts `data` at `/data` and writes the hostname to `/data/hello.txt`, then sleeps.
 5. Delete the pod, create a pod `reader` that mounts the same claim and prints the file. Confirm the data survived.

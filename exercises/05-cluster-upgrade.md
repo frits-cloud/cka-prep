@@ -4,7 +4,7 @@
 
 ## Task
 
-Upgrade the cluster by one minor version (e.g. 1.31 to 1.32):
+Upgrade the cluster by one minor version (e.g. 1.31k to 1.32):
 
 1. Find the target version with `kubeadm upgrade plan`.
 2. Upgrade `controlplane-1`: kubeadm, `kubeadm upgrade apply`, then kubelet and kubectl.
