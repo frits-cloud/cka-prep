@@ -29,6 +29,17 @@ func ubuntuImage() awsec2.IMachineImage {
 	)
 }
 
+// rootVolume returns a 16 GiB encrypted gp3 root disk (/dev/sda1 is the root device of the Ubuntu AMI).
+func rootVolume() *[]*awsec2.BlockDevice {
+	return &[]*awsec2.BlockDevice{{
+		DeviceName: jsii.String("/dev/sda1"),
+		Volume: awsec2.BlockDeviceVolume_Ebs(jsii.Number(16), &awsec2.EbsDeviceOptions{
+			VolumeType: awsec2.EbsDeviceVolumeType_GP3,
+			Encrypted:  jsii.Bool(true),
+		}),
+	}}
+}
+
 // NewNodes creates 4 EC2 instances, 2 in each private subnet.
 func NewNodes(scope constructs.Construct, vpc awsec2.Vpc, bucket awss3.Bucket) {
 	instanceRoleName := "cka-prep-ec2-role"
@@ -68,6 +79,7 @@ func NewNodes(scope constructs.Construct, vpc awsec2.Vpc, bucket awss3.Bucket) {
 			InstanceType:             awsec2.NewInstanceType(jsii.String(instanceType)),
 			MachineImage:             ubuntuImage(),
 			Role:                     role,
+			BlockDevices:             rootVolume(),
 			UserData:                 nodeUserData(name),
 			KeyPair:                  keyPair,
 
@@ -85,6 +97,7 @@ func NewNodes(scope constructs.Construct, vpc awsec2.Vpc, bucket awss3.Bucket) {
 			InstanceType:             awsec2.NewInstanceType(jsii.String(instanceType)),
 			MachineImage:             ubuntuImage(),
 			Role:                     role,
+			BlockDevices:             rootVolume(),
 			UserData:                 nodeUserData(name),
 
 			UserDataCausesReplacement: jsii.Bool(true),
